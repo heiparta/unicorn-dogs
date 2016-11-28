@@ -58,21 +58,23 @@ def process_message(msg):
 
     # Try to get the parts of the message from the MESSAGES dictionary.
     # If it's not there, create one that has None in both parts
-    parts = MESSAGES.get(msg_id, [None] * total_parts)
-    print "XXX", parts, part_number, total_parts
+    msg = MESSAGES.get(msg_id, dict(sent=False, parts=[None] * total_parts))
 
     # store this part of the message in the correct part of the list
-    parts[part_number] = data
+    msg['parts'][part_number] = data
 
     # store the parts in MESSAGES
-    MESSAGES[msg_id] = parts
+    MESSAGES[msg_id] = msg
 
     # if both parts are filled, the message is complete
-    if None not in parts:
+    if None not in msg['parts']:
+        if msg['sent']:
+            print "not sending again"
+            return 'OK'
         # app.logger.debug("got a complete message for %s" % msg_id)
         print "have all parts"
         # We can build the final message.
-        result = ''.join(parts)
+        result = ''.join(msg['parts'])
         # sending the response to the score calculator
         # format:
         #   url -> api_base/jFgwN4GvTB1D2QiQsQ8GHwQUbbIJBS6r7ko9RVthXCJqAiobMsLRmsuwZRQTlOEW
@@ -86,6 +88,7 @@ def process_message(msg):
         req = urllib2.Request(url, data=result, headers={'x-gameday-token':ARGS.API_token})
         resp = urllib2.urlopen(req)
         resp.close()
+        msg['sent'] = True
         print resp
 
     return 'OK'
