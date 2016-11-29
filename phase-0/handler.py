@@ -10,6 +10,7 @@ Args:
 import urllib2
 import redis
 import os
+import json
 
 #logging.basicConfig(level=logging.DEBUG)
 
@@ -43,14 +44,16 @@ class Handler(object):
         # Try to get the parts of the message from the MESSAGES dictionary.
         # If it's not there, create one that has None in both parts
         msg = self.redis_client.get(msg_id)
-        if not msg:
+        if msg:
+            msg = json.loads(msg)
+        else:
             msg = dict(sent=False, parts=[None] * total_parts)
 
         # store this part of the message in the correct part of the list
         msg['parts'][part_number] = raw
 
         # store the parts in MESSAGES
-        self.redis_client.set(msg_id, msg)
+        self.redis_client.set(msg_id, json.dumps(msg))
 
         # if both parts are filled, the message is complete
         if None not in msg['parts']:
