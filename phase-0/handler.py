@@ -22,7 +22,6 @@ class Handler(object):
 
 
     def __init__(self, api_token, api_base, logger):
-        self.MESSAGES = {}
         self.logger = logger
         self.redis_client = None
         self.api_token = api_token
@@ -40,19 +39,18 @@ class Handler(object):
         total_parts = int(data['TotalParts'])  # How many
         raw = data['Data']  # The data of the message
 
+        print "received", msg_id, part_number, raw
         # Try to get the parts of the message from the MESSAGES dictionary.
         # If it's not there, create one that has None in both parts
-        #msg = self.redis_client.get(msg_id)
-        #print "redis data", msg
-        msg = self.MESSAGES.get(msg_id, dict(sent=False, parts=[None] * total_parts))
-        print "received", msg_id, part_number, raw
+        msg = self.redis_client.get(msg_id)
+        if not msg:
+            msg = dict(sent=False, parts=[None] * total_parts)
 
         # store this part of the message in the correct part of the list
         msg['parts'][part_number] = raw
 
         # store the parts in MESSAGES
-        self.MESSAGES[msg_id] = msg
-        #self.redis_client.set(msg_id, msg)
+        self.redis_client.set(msg_id, msg)
 
         # if both parts are filled, the message is complete
         if None not in msg['parts']:
@@ -75,6 +73,6 @@ class Handler(object):
             resp = urllib2.urlopen(req)
             resp.close()
             msg['sent'] = True
-            #self.redis_client.set(msg_id, msg)
+            self.redis_client.set(msg_id, msg)
 
         return 'OK'
