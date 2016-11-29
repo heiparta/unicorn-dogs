@@ -16,7 +16,7 @@ import json
 
 # defining global vars
 
-CACHE_ENDPOINT = os.environ.get('REDIS_ENDPOINT', '10.0.0.133')
+CACHE_ENDPOINT = os.environ.get('REDIS_ENDPOINT', 'https://sqs.eu-central-1.amazonaws.com/991603826386/unicorn-dogs-input')
 
 
 class Handler(object):
