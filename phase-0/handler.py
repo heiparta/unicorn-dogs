@@ -76,6 +76,6 @@ class Handler(object):
             resp = urllib2.urlopen(req)
             resp.close()
             msg['sent'] = True
-            self.redis_client.set(msg_id, msg)
+            self.redis_client.set(msg_id, json.dumps(msg))
 
         return 'OK'
