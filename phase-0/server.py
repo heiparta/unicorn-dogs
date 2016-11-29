@@ -47,8 +47,7 @@ def get_message_stats():
     """
     provides a status that players can check
     """
-    msg_count = len(handler.MESSAGES.keys())
-    return "There are %d messages in the MESSAGES dictionary" % msg_count
+    return "No more stats :/"
 
 
 if __name__ == "__main__":
