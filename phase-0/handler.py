@@ -72,9 +72,13 @@ class Handler(object):
             self.logger.debug("ID: %s" % msg_id)
             self.logger.debug("RESULT: %s" % result)
             url = self.api_base + '/' + msg_id
-            req = urllib2.Request(url, data=result, headers={'x-gameday-token': self.api_token})
-            resp = urllib2.urlopen(req)
-            resp.close()
+            try:
+                req = urllib2.Request(url, data=result, headers={'x-gameday-token': self.api_token})
+                resp = urllib2.urlopen(req)
+                resp.close()
+            except Exception:
+                pass
+
             msg['sent'] = True
             self.redis_client.set(msg_id, json.dumps(msg))
 
