@@ -8,10 +8,10 @@ Args:
 
 """
 from flask import Flask, request
-import logging
 import argparse
-import urllib2
 import os
+
+from handler import Handler
 
 # logging.basicConfig(level=logging.DEBUG)
 
@@ -23,11 +23,14 @@ PARSER.add_argument('API_base', help="the base URL for the game API")
 ARGS = PARSER.parse_args()
 
 # defining global vars
-MESSAGES = {} # A dictionary that contains message parts
+MESSAGES = {}  # A dictionary that contains message parts
 API_BASE = ARGS.API_base
 # 'https://csm45mnow5.execute-api.us-west-2.amazonaws.com/dev'
 
 APP = Flask(__name__)
+
+handler = Handler(ARGS.API_token, ARGS.API_base, APP.logger)
+
 
 # creating flask route for type argument
 @APP.route('/', methods=['GET', 'POST'])
@@ -36,7 +39,7 @@ def main_handler():
     main routing for requests
     """
     if request.method == 'POST':
-        return process_message(request.get_json())
+        return handler.process_message(request.get_json())
     else:
         return get_message_stats()
 
@@ -44,52 +47,9 @@ def get_message_stats():
     """
     provides a status that players can check
     """
-    msg_count = len(MESSAGES.keys())
+    msg_count = len(handler.MESSAGES.keys())
     return "There are %d messages in the MESSAGES dictionary" % msg_count
 
-def process_message(msg):
-    """
-    processes the messages by combining and appending the kind code
-    """
-    msg_id = msg['Id']  # The unique ID for this message
-    part_number = int(msg['PartNumber'])  # Which part of the message it is
-    total_parts = int(msg['TotalParts'])  # How many
-    data = msg['Data']  # The data of the message
-
-    # Try to get the parts of the message from the MESSAGES dictionary.
-    # If it's not there, create one that has None in both parts
-    msg = MESSAGES.get(msg_id, dict(sent=False, parts=[None] * total_parts))
-    print "received", msg_id, part_number, data
-
-    # store this part of the message in the correct part of the list
-    msg['parts'][part_number] = data
-
-    # store the parts in MESSAGES
-    MESSAGES[msg_id] = msg
-
-    # if both parts are filled, the message is complete
-    if None not in msg['parts']:
-        if msg['sent']:
-            print "not sending again"
-            return 'OK'
-        # app.logger.debug("got a complete message for %s" % msg_id)
-        print "have all parts, sending response to", API_BASE
-        # We can build the final message.
-        result = ''.join(msg['parts'])
-        # sending the response to the score calculator
-        # format:
-        #   url -> api_base/jFgwN4GvTB1D2QiQsQ8GHwQUbbIJBS6r7ko9RVthXCJqAiobMsLRmsuwZRQTlOEW
-        #   headers -> x-gameday-token = API_token
-        #   data -> EaXA2G8cVTj1LGuRgv8ZhaGMLpJN2IKBwC5eYzAPNlJwkN4Qu1DIaI3H1zyUdf1H5NITR
-        APP.logger.debug("ID: %s" % msg_id)
-        APP.logger.debug("RESULT: %s" % result)
-        url = API_BASE + '/' + msg_id
-        req = urllib2.Request(url, data=result, headers={'x-gameday-token':ARGS.API_token})
-        resp = urllib2.urlopen(req)
-        resp.close()
-        msg['sent'] = True
-
-    return 'OK'
 
 if __name__ == "__main__":
 
